@@ -1,24 +1,31 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 import pandas as pd
-from io import BytesIO
-from flask import send_file
+import os
 
 app = Flask(__name__)
 
-@app.route("/create-excel", methods=["POST"])
-def create_excel():
-    data = request.json.get("スケジュール表")
+@app.route('/')
+def home():
+    return 'Excel API is running!'
 
-    if not data:
+@app.route('/create-excel', methods=['POST'])
+def create_excel():
+    data = request.get_json()
+    title = data.get("title", "output")
+    rows = data.get("rows")
+
+    if not rows:
         return jsonify({"error": "データが空です"}), 400
 
-    df = pd.DataFrame(data[1:], columns=data[0])
+    try:
+        df = pd.DataFrame(rows[1:], columns=rows[0])
+        filename = f"{title}.xlsx"
+        df.to_excel(filename, index=False)
 
-    output = BytesIO()
-    df.to_excel(output, index=False)
-    output.seek(0)
+        return send_file(filename, as_attachment=True)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    return send_file(output, download_name="schedule.xlsx", as_attachment=True)
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
