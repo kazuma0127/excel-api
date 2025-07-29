@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, send_file
 import pandas as pd
 import os
 
-app = Flask(__name__)  # ← 必ず最初に定義する
+app = Flask(__name__)
 
 @app.route('/')
 def home():
@@ -22,7 +22,12 @@ def create_excel():
         filename = f"{title}.xlsx"
         df.to_excel(filename, index=False)
 
-        return send_file(filename, as_attachment=True)
+        return send_file(
+            filename,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
